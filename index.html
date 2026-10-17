@@ -6,15 +6,15 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="News Reader">
-<title>News → Apple News</title>
+<title>News → Apps</title>
 <style>
   :root {
     --bg:#f5f5f7; --surface:#fff; --text:#1d1d1f; --muted:#6e6e73;
     --border:rgba(0,0,0,0.1); --accent:#0071e3; --green:#28a745;
-    --wsj:#c00; --wapo:#1a5c96;
+    --wsj:#c00; --nyt:#000; --nyt-light:#326891;
   }
   @media (prefers-color-scheme:dark) {
-    :root { --bg:#000; --surface:#1c1c1e; --text:#f5f5f7; --muted:#98989d; --border:rgba(255,255,255,0.12); --accent:#2997ff; --green:#30d158; --wsj:#ff453a; --wapo:#4d9de0; }
+    :root { --bg:#000; --surface:#1c1c1e; --text:#f5f5f7; --muted:#98989d; --border:rgba(255,255,255,0.12); --accent:#2997ff; --green:#30d158; --wsj:#ff453a; --nyt:#e0e0e0; --nyt-light:#74b5e0; }
   }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   body { font-family:-apple-system,BlinkMacSystemFont,sans-serif; background:var(--bg); color:var(--text); padding-bottom:calc(env(safe-area-inset-bottom)+60px); }
@@ -32,7 +32,7 @@
   .pub-btn[data-pub="all"].active    { background:var(--accent); }
   .pub-btn[data-pub="toyota"].active { background:#c8102e; }
   .pub-btn[data-pub="wsj"].active    { background:var(--wsj); }
-  .pub-btn[data-pub="wp"].active     { background:var(--wapo); }
+  .pub-btn[data-pub="nyt"].active    { background:#326891; }
 
   .search-wrap { position:relative; margin-bottom:8px; }
   .search-input { width:100%; padding:8px 32px 8px 34px; border-radius:10px; border:none; background:rgba(120,120,128,0.16); font-size:15px; color:var(--text); outline:none; -webkit-appearance:none; }
@@ -58,20 +58,23 @@
 
   .articles { display:flex; flex-direction:column; gap:2px; }
   .card-row { display:flex; align-items:stretch; background:var(--surface); border-radius:12px; overflow:hidden; }
-  .card-body { flex:1; padding:12px 12px 11px 14px; cursor:pointer; min-width:0; }
+
+  /* NYT articles are direct links; WSJ articles are copy-to-clipboard */
+  .card-body { flex:1; padding:12px 12px 11px 14px; cursor:pointer; min-width:0; text-decoration:none; color:inherit; display:block; }
   .card-body:active { background:rgba(0,0,0,0.04); }
   @media (prefers-color-scheme:dark) { .card-body:active { background:rgba(255,255,255,0.06); } }
+
   .card-source { font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:3px; }
-  .card-source.wsj  { color:var(--wsj); }
-  .card-source.wapo { color:var(--wapo); }
+  .card-source.wsj { color:var(--wsj); }
+  .card-source.nyt { color:var(--nyt-light); }
   .card-title { font-size:15px; font-weight:600; line-height:1.35; margin-bottom:3px; color:var(--text); }
   .card-desc { font-size:13px; color:var(--muted); line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:3px; }
   .card-time { font-size:11px; color:var(--muted); }
 
-  .copy-btn { flex-shrink:0; width:50px; border:none; border-left:0.5px solid var(--border); background:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:0 4px; color:var(--muted); font-size:9px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; }
-  .copy-btn:active { background:rgba(0,0,0,0.05); }
-  .copy-btn svg { width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-  .copy-btn.copied { color:var(--green); }
+  .card-action { flex-shrink:0; width:50px; border:none; border-left:0.5px solid var(--border); background:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:0 4px; color:var(--muted); font-size:9px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; text-decoration:none; }
+  .card-action:active { background:rgba(0,0,0,0.05); }
+  .card-action svg { width:17px; height:17px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .card-action.copied { color:var(--green); }
 
   mark { background:rgba(0,113,227,0.18); color:inherit; border-radius:2px; }
 
@@ -85,14 +88,14 @@
 <body>
 <header>
   <div class="header-top">
-    <div class="logo">News → Apple News</div>
+    <div class="logo">News Reader</div>
     <div id="badge" class="badge"></div>
   </div>
   <div class="pub-row">
     <button class="pub-btn active" data-pub="all">All</button>
     <button class="pub-btn" data-pub="toyota" data-keyword="toyota">Toyota</button>
     <button class="pub-btn" data-pub="wsj">WSJ</button>
-    <button class="pub-btn" data-pub="wp">WP</button>
+    <button class="pub-btn" data-pub="nyt">NYT</button>
   </div>
   <div class="search-wrap">
     <span class="search-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg></span>
@@ -108,12 +111,11 @@
 <div id="toast"></div>
 
 <script>
-// WaPo fetched via Cloudflare Worker to bypass CORS
-const WAPO_WORKER = 'https://billowing-mountain-2c66.contentnotthedealer.workers.dev/';
-
 const SOURCES = {
   wsj: {
     cls: 'wsj',
+    // WSJ: copy headline, open in Apple News manually
+    mode: 'copy',
     feeds: [
       { id:'wsj-usnews',    label:'US News',     url:'https://feeds.content.dowjones.io/public/rss/RSSUSnews' },
       { id:'wsj-world',     label:'World',       url:'https://feeds.content.dowjones.io/public/rss/RSSWorldNews' },
@@ -127,17 +129,31 @@ const SOURCES = {
       { id:'wsj-politics',  label:'Politics',    url:'https://feeds.content.dowjones.io/public/rss/RSSPolitics' },
     ]
   },
-  wapo: {
-    cls: 'wapo',
+  nyt: {
+    cls: 'nyt',
+    // NYT: tap headline opens directly in NYT app via Universal Links
+    mode: 'link',
     feeds: [
-      { id:'wapo-all', label:'All Stories', url: WAPO_WORKER },
+      { id:'nyt-home',      label:'Top News',    url:'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml' },
+      { id:'nyt-us',        label:'US',          url:'https://rss.nytimes.com/services/xml/rss/nyt/US.xml' },
+      { id:'nyt-world',     label:'World',       url:'https://rss.nytimes.com/services/xml/rss/nyt/World.xml' },
+      { id:'nyt-politics',  label:'Politics',    url:'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml' },
+      { id:'nyt-business',  label:'Business',    url:'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml' },
+      { id:'nyt-economy',   label:'Economy',     url:'https://rss.nytimes.com/services/xml/rss/nyt/Economy.xml' },
+      { id:'nyt-tech',      label:'Tech',        url:'https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml' },
+      { id:'nyt-science',   label:'Science',     url:'https://rss.nytimes.com/services/xml/rss/nyt/Science.xml' },
+      { id:'nyt-health',    label:'Health',      url:'https://rss.nytimes.com/services/xml/rss/nyt/Health.xml' },
+      { id:'nyt-opinion',   label:'Opinion',     url:'https://rss.nytimes.com/services/xml/rss/nyt/Opinion.xml' },
+      { id:'nyt-arts',      label:'Arts',        url:'https://rss.nytimes.com/services/xml/rss/nyt/Arts.xml' },
+      { id:'nyt-sports',    label:'Sports',      url:'https://rss.nytimes.com/services/xml/rss/nyt/Sports.xml' },
+      { id:'nyt-travel',    label:'Travel',      url:'https://rss.nytimes.com/services/xml/rss/nyt/Travel.xml' },
+      { id:'nyt-style',     label:'Style',       url:'https://rss.nytimes.com/services/xml/rss/nyt/FashionandStyle.xml' },
     ]
   }
 };
 
-const ALL_FEEDS = [...SOURCES.wsj.feeds, ...SOURCES.wapo.feeds];
+const ALL_FEEDS = [...SOURCES.wsj.feeds, ...SOURCES.nyt.feeds];
 
-// WSJ still needs proxies; WaPo goes direct to Worker
 const PROXIES = [
   u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
   u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
@@ -173,8 +189,10 @@ async function copyTitle(title, btn) {
     document.body.appendChild(ta); ta.focus(); ta.select();
     document.execCommand('copy'); document.body.removeChild(ta);
   }
-  btn.classList.add('copied');
-  setTimeout(() => btn.classList.remove('copied'), 1800);
+  if (btn) {
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 1800);
+  }
   showToast('Headline copied — paste in Apple News search');
 }
 
@@ -188,23 +206,14 @@ function relTime(d) {
   return d.toLocaleDateString('en-US', {month:'short', day:'numeric'});
 }
 
-async function tryFetch(feed) {
-  // WaPo: go direct to Worker, no proxy needed
-  if (feed.id === 'wapo-all') {
-    try {
-      const r = await fetch(feed.url, {signal: AbortSignal.timeout(10000)});
-      if (r.ok) { const t = await r.text(); if (t.includes('<item>')) return t; }
-    } catch(e) {}
-    return null;
-  }
-  // WSJ: try direct then proxies
+async function tryFetch(url) {
   try {
-    const r = await fetch(feed.url, {signal: AbortSignal.timeout(5000)});
+    const r = await fetch(url, {signal: AbortSignal.timeout(5000)});
     if (r.ok) { const t = await r.text(); if (t.includes('<item>')) return t; }
   } catch(e) {}
   for (const proxy of PROXIES) {
     try {
-      const r = await fetch(proxy(feed.url), {signal: AbortSignal.timeout(9000)});
+      const r = await fetch(proxy(url), {signal: AbortSignal.timeout(9000)});
       if (r.ok) { const t = await r.text(); if (t.includes('<item>')) return t; }
     } catch(e) {}
   }
@@ -240,8 +249,7 @@ function getVisibleArticles() {
   } else if (activePub === 'all') {
     pool = allArticles.slice();
   } else {
-    const srcKey = activePub === 'wp' ? 'wapo' : activePub;
-    pool = allArticles.filter(a => a.sourceCls === srcKey);
+    pool = allArticles.filter(a => a.sourceCls === activePub);
     if (activeSection !== 'all') pool = pool.filter(a => a.feedId === activeSection);
   }
   if (searchQuery) {
@@ -263,6 +271,7 @@ function highlight(text, query) {
 
 const copyIcon  = `<svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const checkIcon = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
+const linkIcon  = `<svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
 
 function render() {
   const sorted = getVisibleArticles();
@@ -284,27 +293,50 @@ function render() {
   badge.textContent = sorted.length + ' stories'; badge.style.display = 'inline-block';
   const hlQuery = searchQuery || activePubKeyword;
 
-  const rows = sorted.map((a, i) => `<div class="card-row">
-    <div class="card-body" onclick="handleTap(${i})">
-      <span class="card-source ${a.sourceCls}">${a.sourceCls === 'wsj' ? 'WSJ' : 'WaPo'} · ${a.label}</span>
-      <div class="card-title">${highlight(a.title, hlQuery)}</div>
-      ${a.desc ? `<div class="card-desc">${a.desc}</div>` : ''}
-      <div class="card-time">${relTime(a.date)}</div>
-    </div>
-    <button class="copy-btn" onclick="handleCopyBtn(event,${i})" aria-label="Copy headline">
-      ${copyIcon}<span>copy</span>
-    </button>
-  </div>`).join('');
+  const rows = sorted.map((a, i) => {
+    const srcMode = SOURCES[a.sourceCls]?.mode || 'copy';
+    const sourceLabel = a.sourceCls === 'wsj' ? 'WSJ' : 'NYT';
 
-  resultEl.innerHTML =
-    `<div class="info"><strong>Tap any headline</strong> to copy it — then switch to Apple News and paste in the search bar.</div>` +
-    `<div class="articles">${rows}</div>`;
+    if (srcMode === 'link') {
+      // NYT: whole card is a link, action button also links
+      return `<div class="card-row">
+        <a class="card-body" href="${a.link}" target="_blank">
+          <span class="card-source ${a.sourceCls}">${sourceLabel} · ${a.label}</span>
+          <div class="card-title">${highlight(a.title, hlQuery)}</div>
+          ${a.desc ? `<div class="card-desc">${a.desc}</div>` : ''}
+          <div class="card-time">${relTime(a.date)}</div>
+        </a>
+        <a class="card-action" href="${a.link}" target="_blank" aria-label="Open article">
+          ${linkIcon}<span>open</span>
+        </a>
+      </div>`;
+    } else {
+      // WSJ: copy headline to clipboard
+      return `<div class="card-row">
+        <div class="card-body" onclick="handleTap(${i})">
+          <span class="card-source ${a.sourceCls}">${sourceLabel} · ${a.label}</span>
+          <div class="card-title">${highlight(a.title, hlQuery)}</div>
+          ${a.desc ? `<div class="card-desc">${a.desc}</div>` : ''}
+          <div class="card-time">${relTime(a.date)}</div>
+        </div>
+        <button class="card-action" onclick="handleCopyBtn(event,${i})" aria-label="Copy headline">
+          ${copyIcon}<span>copy</span>
+        </button>
+      </div>`;
+    }
+  }).join('');
+
+  const infoText = `<div class="info">
+    <strong>NYT:</strong> Tap to open in the NYT app. &nbsp;|&nbsp; <strong>WSJ:</strong> Tap to copy headline, then paste in Apple News search.
+  </div>`;
+
+  resultEl.innerHTML = infoText + `<div class="articles">${rows}</div>`;
 }
 
 function handleTap(i) {
   const a = currentSorted[i]; if (!a) return;
-  const btn = document.querySelectorAll('.copy-btn')[i];
-  if (btn) copyTitle(a.title, btn);
+  const btn = document.querySelectorAll('.card-action')[i];
+  copyTitle(a.title, btn);
 }
 
 function handleCopyBtn(e, i) {
@@ -325,8 +357,7 @@ function buildTabs() {
   if (activePub === 'all') {
     feeds = ALL_FEEDS;
   } else {
-    const srcKey = activePub === 'wp' ? 'wapo' : activePub;
-    feeds = SOURCES[srcKey] ? SOURCES[srcKey].feeds : [];
+    feeds = SOURCES[activePub] ? SOURCES[activePub].feeds : [];
   }
   tabsEl.innerHTML = [{id:'all', label:'All'}, ...feeds].map(f =>
     `<button class="tab${f.id === activeSection ? ' active' : ''}" data-id="${f.id}">${f.label}</button>`
@@ -368,7 +399,7 @@ async function loadAll() {
 
   await Promise.all(ALL_FEEDS.map(async feed => {
     const src = feedSource[feed.id];
-    const text = await tryFetch(feed);
+    const text = await tryFetch(feed.url);
     const articles = text ? parseRSS(text, feed.id, feed.label, src) : [];
     feedData[feed.id] = articles;
     const seen = new Set(allArticles.map(a => a.link));
